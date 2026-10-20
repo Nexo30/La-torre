@@ -1,7 +1,7 @@
 // Entry point: class select, board rendering, touch input and HUD.
-import { createRun, tapTile, heroAttack, heroMutationSkill, usePotion, waitTurn, canHit } from './game.js?v=20261020c';
-import { CLASSES, GENDERS, COLS, ROWS, MAX_FLOOR, WALL, STAIRS } from './data.js?v=20261020c';
-import { heroCanvas, enemyCanvas, tileCanvas } from './sprites.js?v=20261020c';
+import { createRun, tapTile, heroAttack, heroMutationSkill, usePotion, waitTurn, canHit } from './game.js?v=20261020d';
+import { CLASSES, GENDERS, COLS, ROWS, MAX_FLOOR, WALL, STAIRS } from './data.js?v=20261020d';
+import { heroCanvas, enemyCanvas, tileCanvas } from './sprites.js?v=20261020d';
 
 const $ = id => document.getElementById(id);
 const canvas = $('board');
@@ -72,7 +72,26 @@ function drawBoard(t) {
   // hero
   const hx = ox + hero.x * T, hy = oy + hero.y * T + Math.sin(t / 260) * T * 0.04;
   ctx.drawImage(heroCanvas(run.classId, run.gender, run.mutation), hx, hy, T, T);
-  if (run.hero.stealthTurns > 0) { ctx.globalAlpha = 0.32; ctx.drawImage(heroCanvas(run.classId, run.gender, run.mutation), hx - T * 0.18, hy, T, T); ctx.globalAlpha = 1; }
+  if (run.hero.stealthTurns > 0) {
+    const pulse = 0.5 + 0.5 * Math.sin(t / 115);
+    ctx.save();
+    ctx.globalAlpha = 0.22 + pulse * 0.16;
+    ctx.drawImage(heroCanvas(run.classId, run.gender, run.mutation), hx - T * (0.16 + pulse * 0.08), hy, T, T);
+    ctx.drawImage(heroCanvas(run.classId, run.gender, run.mutation), hx + T * (0.16 + pulse * 0.08), hy - T * 0.05, T, T);
+    ctx.globalAlpha = 0.4 + pulse * 0.35;
+    ctx.strokeStyle = pulse > 0.5 ? '#8cf5d2' : '#b4a2ff';
+    ctx.lineWidth = Math.max(1, T * 0.06);
+    ctx.beginPath(); ctx.ellipse(hx + T / 2, hy + T * 0.72, T * (0.38 + pulse * 0.13), T * (0.18 + pulse * 0.05), 0, 0, Math.PI * 2); ctx.stroke();
+    for (let i = 0; i < 5; i++) {
+      const a = t / 240 + i * Math.PI * 2 / 5;
+      const px = hx + T / 2 + Math.cos(a) * T * (0.38 + pulse * 0.12);
+      const py = hy + T / 2 + Math.sin(a) * T * 0.38;
+      ctx.globalAlpha = 0.35 + pulse * 0.55;
+      ctx.fillStyle = i % 2 ? '#9ef5db' : '#c8baff';
+      ctx.beginPath(); ctx.arc(px, py, Math.max(1.2, T * 0.045), 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
   if (hero.flash > 0) { ctx.fillStyle = 'rgba(255, 60, 60, 0.35)'; ctx.fillRect(hx, hy, T, T); }
   ctx.strokeStyle = `rgba(127, 224, 255, ${0.5 + 0.4 * Math.sin(t / 200)})`;
   ctx.lineWidth = 2;
@@ -193,9 +212,16 @@ function refresh() {
   $('stat-label').textContent = `ATK ${h.atk} · DEF ${h.def}`;
   $('btn-potion').innerHTML = `Poción<small>x${h.potions}</small>`;
   const powerNames={goblin:'Sigilo',dragon:'Aliento de fuego',beast:'Aullido bestial'};
-  $('btn-mutation').textContent=run.mutation?powerNames[run.mutation]:'Poder';
+  if (run.mutation === 'goblin') {
+    const status = h.stealthTurns > 0 ? `Activo: ${h.stealthTurns} · Recarga: ${h.stealthCooldown}` :
+      h.stealthCooldown > 0 ? `Recarga: ${h.stealthCooldown} turnos` : 'Listo';
+    $('btn-mutation').innerHTML = `Sigilo<small>${status}</small>`;
+  } else {
+    $('btn-mutation').innerHTML = run.mutation ? `${powerNames[run.mutation]}<small>3 MP</small>` : 'Poder';
+  }
   $('actions').classList.toggle('grid-cols-4',!!run.mutation); $('actions').classList.toggle('grid-cols-3',!run.mutation);
-  $('btn-mutation').classList.toggle('hidden',!run.mutation); $('btn-mutation').disabled=!run.mutation||(run.mutation!=='goblin'&&h.mp<3);
+  $('btn-mutation').classList.toggle('hidden',!run.mutation);
+  $('btn-mutation').disabled=!run.mutation||(run.mutation==='goblin'?h.stealthCooldown>0:h.mp<3);
   $('btn-potion').disabled = h.potions <= 0;
   const log = $('log');
   log.innerHTML = '';
