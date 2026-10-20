@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>La Torre: Roguelike por turnos en pixel art</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="game-root" class="flex flex-col">
+    <header class="hud-top flex items-center gap-3 px-3 py-2">
+      <div class="shrink-0">
+        <div id="floor-label" class="text-sm font-bold text-[#e8f4ff]">Piso 1/10</div>
+        <div id="class-label" class="text-[11px] text-[#9fb4e0]">Guerrero</div>
+      </div>
+      <div class="flex-1 min-w-0 space-y-1">
+        <div class="flex items-center gap-2 text-[11px]">
+          <span class="w-6 text-[#ff8a8a]">HP</span>
+          <div class="bar flex-1"><div id="hp-fill" class="bar-fill bg-[#e0474c]"></div></div>
+          <span id="hp-text" class="w-12 text-right">30/30</span>
+        </div>
+        <div class="flex items-center gap-2 text-[11px]">
+          <span class="w-6 text-[#7fd0ff]">MP</span>
+          <div class="bar flex-1"><div id="mp-fill" class="bar-fill bg-[#3c8cff]"></div></div>
+          <span id="mp-text" class="w-12 text-right">10/10</span>
+        </div>
+      </div>
+      <div class="shrink-0 text-[11px] text-right text-[#c9b8ff]">
+        <div id="stat-label">ATK 6 · DEF 3</div>
+        <button id="menu-btn" class="menu-btn mt-1 px-2 py-0.5">Menú</button>
+      </div>
+    </header>
+
+    <main class="board-wrap relative flex-1 min-h-0">
+      <canvas id="board"></canvas>
+    </main>
+
+    <div id="log" class="log-box px-3 py-2 text-[13px] leading-snug"></div>
+
+    <nav id="actions" class="grid grid-cols-4 gap-2 p-2">
+      <button id="btn-attack" class="act-btn">Atacar</button>
+      <button id="btn-skill" class="act-btn">Habilidad</button>
+      <button id="btn-potion" class="act-btn">Poción</button>
+      <button id="btn-wait" class="act-btn">Esperar</button>
+    </nav>
+
+    <!-- Start / class select -->
+    <section id="start-screen" class="overlay">
+      <div class="w-full max-w-[460px] mx-auto px-3 py-4 flex flex-col gap-3">
+        <div class="flex items-end justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-[#e8f4ff]">La Torre</h1>
+            <p class="text-sm text-[#b9a8ee]">10 pisos · 1 turno por acción</p>
+          </div>
+          <p class="text-[11px] text-right text-[#9fb4e0] max-w-[55%]">Cada piso es un nuevo desafío. ¿Hasta dónde llegarás?</p>
+        </div>
+        <p class="text-sm text-[#cfe3ff]">Elige tu clase y tu sexo:</p>
+        <div class="flex gap-2">
+          <button id="g-hombre" class="gender-btn flex-1">Hombre</button>
+          <button id="g-mujer" class="gender-btn flex-1">Mujer</button>
+        </div>
+        <div id="class-list" class="grid grid-cols-2 gap-2"></div>
+        <button id="start-btn" class="start-btn">¡Subir la torre!</button>
+        <p class="text-[11px] text-center text-[#8c80b8]">Toca una casilla para moverte o atacar. Cada paso y cada acción gasta un turno.</p>
+      </div>
+    </section>
+
+    <!-- End of run -->
+    <section id="end-screen" class="overlay hidden">
+      <div class="flex flex-col items-center gap-3 px-6 text-center">
+        <h2 id="end-title" class="text-2xl font-bold text-[#ffd34d]">Caíste</h2>
+        <p id="end-text" class="text-[#cfe3ff]"></p>
+        <button id="again-btn" class="start-btn">Nueva subida</button>
+      </div>
+    </section>
+  </div>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
