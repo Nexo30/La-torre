@@ -1,7 +1,7 @@
 // Static game data: board size, classes, enemies, tile ids.
 
-export const COLS = 11;
-export const ROWS = 15;
+export const COLS = 15;
+export const ROWS = 21;
 export const MAX_FLOOR = 10;
 export const VISION = 5;
 export const POTION_HEAL = 12;
