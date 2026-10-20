@@ -71,15 +71,71 @@ function drawBoard(t) {
 
   // hero
   const hx = ox + hero.x * T, hy = oy + hero.y * T + Math.sin(t / 260) * T * 0.04;
-  ctx.drawImage(heroCanvas(run.classId, run.gender), hx, hy, T, T);
-  if (run.mutation === 'goblin') { ctx.fillStyle='rgba(76,210,75,.62)'; ctx.fillRect(hx+T*.28,hy+T*.18,T*.44,T*.48); }
-  if (run.mutation === 'beast') { ctx.fillStyle='rgba(165,169,174,.62)'; ctx.fillRect(hx+T*.28,hy+T*.18,T*.44,T*.48); }
+  ctx.drawImage(heroCanvas(run.classId, run.gender, run.mutation), hx, hy, T, T);
+  if (run.hero.stealthTurns > 0) { ctx.globalAlpha = 0.32; ctx.drawImage(heroCanvas(run.classId, run.gender, run.mutation), hx - T * 0.18, hy, T, T); ctx.globalAlpha = 1; }
   if (hero.flash > 0) { ctx.fillStyle = 'rgba(255, 60, 60, 0.35)'; ctx.fillRect(hx, hy, T, T); }
   ctx.strokeStyle = `rgba(127, 224, 255, ${0.5 + 0.4 * Math.sin(t / 200)})`;
   ctx.lineWidth = 2;
   ctx.strokeRect(hx + 1, hy + 1, T - 2, T - 2);
 
   drawFloats(t);
+}
+
+
+function drawMutationEffects(now) {
+  if (!run || !run.visualEffects || !run.visualEffects.length) return;
+  const T = view.T;
+  const cxFor = x => view.ox + (x + 0.5) * T;
+  const cyFor = y => view.oy + (y + 0.5) * T;
+  run.visualEffects = run.visualEffects.filter(fx => now - fx.started < fx.duration);
+  for (const fx of run.visualEffects) {
+    const p = Math.max(0, Math.min(1, (now - fx.started) / fx.duration));
+    const cx = cxFor(fx.x), cy = cyFor(fx.y);
+    ctx.save();
+    if (fx.type === 'stealth') {
+      ctx.globalAlpha = 1 - p * 0.45;
+      for (let i = 0; i < 3; i++) {
+        const radius = T * (0.35 + p * 1.05 + i * 0.22);
+        ctx.strokeStyle = i % 2 ? '#8cf5d2' : '#b4a2ff';
+        ctx.lineWidth = Math.max(1, T * 0.055);
+        ctx.beginPath(); ctx.ellipse(cx, cy, radius, radius * 0.72, p * 2 + i, p * 1.6, p * 1.6 + Math.PI * 1.5); ctx.stroke();
+      }
+      for (let i = 0; i < 8; i++) {
+        const a = i * Math.PI / 4 + p * 8, radius = T * (0.35 + p * 0.7);
+        ctx.fillStyle = i % 2 ? '#9ef5db' : '#c8baff';
+        ctx.beginPath(); ctx.arc(cx + Math.cos(a) * radius, cy + Math.sin(a) * radius, Math.max(1.5, T * 0.06 * (1 - p)), 0, Math.PI * 2); ctx.fill();
+      }
+    } else if (fx.type === 'fire') {
+      const tx = cxFor(fx.targetX), ty = cyFor(fx.targetY);
+      const x = cx + (tx - cx) * p, y = cy + (ty - cy) * p;
+      const radius = T * (0.12 + 0.16 * Math.sin(p * Math.PI));
+      ctx.globalAlpha = 1 - p * 0.2; ctx.strokeStyle = '#ff7a22'; ctx.lineWidth = T * 0.22;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke();
+      for (let i = 0; i < 4; i++) {
+        ctx.fillStyle = ['#ff3b1f', '#ff8b27', '#ffd45c', '#fff0b0'][i];
+        ctx.beginPath(); ctx.arc(x + Math.sin(now / 38 + i * 2) * radius, y + Math.cos(now / 43 + i) * radius, radius * (1.1 - i * 0.12), 0, Math.PI * 2); ctx.fill();
+      }
+      if (p > 0.68) {
+        ctx.globalAlpha = (p - 0.68) / 0.32; ctx.strokeStyle = '#ffd45c'; ctx.lineWidth = Math.max(1, T * 0.07);
+        ctx.beginPath(); ctx.arc(tx, ty, T * (0.2 + (p - 0.68) * 2.5), 0, Math.PI * 2); ctx.stroke();
+      }
+    } else if (fx.type === 'howl') {
+      ctx.globalAlpha = 1 - p;
+      for (let i = 0; i < 3; i++) {
+        const radius = T * (0.3 + p * 2.5 + i * 0.24);
+        ctx.strokeStyle = i === 1 ? '#d5e6ff' : '#8f9aff'; ctx.lineWidth = Math.max(1, T * (0.09 - p * 0.04));
+        ctx.beginPath(); ctx.ellipse(cx, cy, radius, radius * 0.76, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(190,205,255,0.15)'; ctx.beginPath(); ctx.arc(cx, cy, T * (0.45 + p * 1.9), 0, Math.PI * 2); ctx.fill();
+    } else if (fx.type === 'injection') {
+      ctx.globalAlpha = 1 - p; ctx.strokeStyle = '#a4f0d1'; ctx.lineWidth = Math.max(1, T * 0.07);
+      for (let i = 0; i < 5; i++) {
+        const radius = T * (0.2 + p * 1.1 + i * 0.13);
+        ctx.beginPath(); ctx.arc(cx, cy, radius, now / 280 + i, now / 280 + i + Math.PI * 1.3); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
 }
 
 function drawEnemy(e, px, py, T) {
@@ -119,6 +175,7 @@ function frame(t) {
     for (const e of run.enemies) if (e.flash > 0) e.flash--;
     if (run.hero.flash > 0) run.hero.flash--;
     drawBoard(t);
+    drawMutationEffects(Date.now());
   }
   requestAnimationFrame(frame);
 }
@@ -159,7 +216,7 @@ function act(fn) {
 }
 
 function showDialog(){if(!run.dialog)return;$('dialog-title').textContent=run.dialog.title;$('dialog-text').textContent=run.dialog.text;$('dialog-screen').classList.remove('hidden');}
-function closeDialog(){run.dialog=null;$('dialog-screen').classList.add('hidden');refresh();if(run.won)showEnd(true);else if(run.over)showEnd(false);}
+function closeDialog(){run.dialog=null;$('dialog-screen').classList.add('hidden');if(run.mutation)run.visualEffects.push({type:'injection',x:run.hero.x,y:run.hero.y,started:Date.now(),duration:1050});refresh();if(run.won)showEnd(true);else if(run.over)showEnd(false);}
 
 function showEnd(won) {
   $('end-title').textContent = won ? '¡Conquistaste la torre!' : 'Caíste';
