@@ -1,0 +1,88 @@
+name: Extract game ZIP into repository
+
+on:
+  push:
+    paths:
+      - ".github/workflows/extract-game.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  extract-game:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Extract project files safely
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path, PurePosixPath
+          from zipfile import ZipFile
+          import shutil
+
+          archive = Path("la-torre-roguelike-por-turnos-en-pixel-art-star.zip")
+          if not archive.is_file():
+              raise SystemExit(f"ZIP not found: {archive}")
+
+          destination = Path(".").resolve()
+          staging = Path("/tmp/la-torre-extracted")
+          if staging.exists():
+              shutil.rmtree(staging)
+          staging.mkdir(parents=True)
+
+          with ZipFile(archive) as zf:
+              names = [n for n in zf.namelist() if n and not n.endswith("/")]
+              if not names:
+                  raise SystemExit("The ZIP contains no files.")
+              paths = [PurePosixPath(n) for n in names]
+              if any(p.is_absolute() or ".." in p.parts for p in paths):
+                  raise SystemExit("Unsafe path detected in ZIP; extraction stopped.")
+              first_parts = {p.parts[0] for p in paths if len(p.parts) > 1}
+              strip_root = None
+              if len(first_parts) == 1 and all(len(p.parts) > 1 for p in paths):
+                  strip_root = next(iter(first_parts))
+
+              for name, p in zip(names, paths):
+                  relative = Path(*p.parts[1:]) if strip_root else Path(*p.parts)
+                  if not relative.parts:
+                      continue
+                  target = (staging / relative).resolve()
+                  if staging.resolve() not in target.parents and target != staging.resolve():
+                      raise SystemExit("Unsafe extraction target; stopped.")
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  with zf.open(name) as src, target.open("wb") as dst:
+                      shutil.copyfileobj(src, dst)
+
+          excluded = {".git", ".github"}
+          count = 0
+          for item in staging.iterdir():
+              if item.name in excluded:
+                  continue
+              target = destination / item.name
+              if item.is_dir():
+                  shutil.copytree(item, target, dirs_exist_ok=True)
+              else:
+                  shutil.copy2(item, target)
+              count += 1
+          if count == 0:
+              raise SystemExit("No project files were copied.")
+          print(f"Extracted project content into repository root ({count} top-level items).")
+          PY
+
+      - name: Commit extracted game
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No extracted changes to commit."
+          else
+            git commit -m "Extract La Torre game project from ZIP"
+            git push
+          fi
