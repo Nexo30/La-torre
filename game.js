@@ -265,7 +265,12 @@ function meetInjector(run, npc) {
     h.def += 4;
     addLog(run, 'Sientes que tu cuerpo se vuelve más pesado y resistente. Algo en ti ha cambiado.');
   }
-  run.dialog = { title: 'Una sustancia desconocida', text: 'El desconocido te agarra del brazo y te inyecta un líquido extraño. «Ya está. No preguntes qué era; lo descubrirás pronto». Se aleja sin darte ninguna explicación. Un calor extraño comienza a extenderse por tu cuerpo…' };
+  const mutationInfo = {
+    goblin: { title: '¡Poder obtenido: Sigilo!', text: 'El inyector te sujeta con fuerza y te clava la aguja antes de que puedas reaccionar. El suero altera tu cuerpo: tu piel se vuelve verde y notas que puedes desaparecer entre las sombras. Has obtenido el poder Sigilo.' },
+    dragon: { title: '¡Poder obtenido: Aliento de fuego!', text: 'El inyector te inmoviliza y te inyecta el suero a la fuerza. Un calor abrasador te atraviesa y sientes fuego ardiendo en tu interior. Has obtenido Aliento de fuego.' },
+    beast: { title: '¡Poder obtenido: Aullido bestial!', text: 'El inyector te agarra y te inyecta el suero sin darte oportunidad de apartarte. Tu piel se vuelve gris y tu cuerpo se endurece; una fuerza salvaje despierta en tu pecho. Has obtenido Aullido bestial.' }
+  };
+  run.dialog = mutationInfo[kind];
   endTurn(run);
 }
 
