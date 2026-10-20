@@ -28,7 +28,6 @@
       </div>
       <div class="shrink-0 text-[11px] text-right text-[#c9b8ff]">
         <div id="stat-label">ATK 6 · DEF 3</div>
-        <button id="menu-btn" class="menu-btn mt-1 px-2 py-0.5">Menú</button>
       </div>
     </header>
 
@@ -38,9 +37,8 @@
 
     <div id="log" class="log-box px-3 py-2 text-[13px] leading-snug"></div>
 
-    <nav id="actions" class="grid grid-cols-4 gap-2 p-2">
+    <nav id="actions" class="grid grid-cols-3 gap-2 p-2">
       <button id="btn-attack" class="act-btn">Atacar</button>
-      <button id="btn-skill" class="act-btn">Habilidad</button>
       <button id="btn-potion" class="act-btn">Poción</button>
       <button id="btn-wait" class="act-btn">Esperar</button>
     </nav>
@@ -71,7 +69,10 @@
       <div class="flex flex-col items-center gap-3 px-6 text-center">
         <h2 id="end-title" class="text-2xl font-bold text-[#ffd34d]">Caíste</h2>
         <p id="end-text" class="text-[#cfe3ff]"></p>
-        <button id="again-btn" class="start-btn">Nueva subida</button>
+        <div class="end-actions">
+          <button id="retry-btn" class="start-btn">Reintentar</button>
+          <button id="menu-end-btn" class="menu-end-btn">Menú</button>
+        </div>
       </div>
     </section>
   </div>
