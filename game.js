@@ -257,13 +257,13 @@ function meetInjector(run, npc) {
   run.mutation = kind;
   if (kind === 'goblin') {
     h.atk = Math.max(1, h.atk - 2); h.stealthTurns = 0;
-    addLog(run, 'Algo cambia bajo tu piel. Tu cuerpo adquiere un tono verde y sientes que puedes fundirte con las sombras. ATK -2.');
+    addLog(run, 'Una sensación extraña se extiende bajo tu piel. Tus movimientos se sienten distintos. Algo en ti ha cambiado.');
   } else if (kind === 'dragon') {
     h.atk = Math.max(1, h.atk - 2); h.def = Math.max(0, h.def - 1);
-    addLog(run, 'Un calor abrasador te recorre y tu aliento humea. ATK -2, DEF -1.');
+    addLog(run, 'Una oleada de calor te recorre el cuerpo. Respiras con dificultad por un instante. Algo en ti ha cambiado.');
   } else {
     h.def += 4;
-    addLog(run, 'Tu piel se vuelve gris y tus músculos se endurecen. DEF +4.');
+    addLog(run, 'Sientes que tu cuerpo se vuelve más pesado y resistente. Algo en ti ha cambiado.');
   }
   run.dialog = { title: 'Una sustancia desconocida', text: 'El desconocido te agarra del brazo y te inyecta un líquido extraño. «Ya está. No preguntes qué era; lo descubrirás pronto». Se aleja sin darte ninguna explicación. Un calor extraño comienza a extenderse por tu cuerpo…' };
   endTurn(run);
