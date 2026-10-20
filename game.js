@@ -44,7 +44,7 @@ function carve(grid, a, b) {
 function buildFloor() {
   const grid = grid2d(WALL);
   const rooms = [];
-  for (let tries = 0; tries < 300 && rooms.length < 6; tries++) {
+  for (let tries = 0; tries < 500 && rooms.length < 8; tries++) {
     const w = rand(3, 5), h = rand(3, 4);
     const x = rand(1, COLS - w - 1), y = rand(1, ROWS - h - 1);
     if (rooms.some(r => x < r.x + r.w + 2 && x + w + 2 > r.x && y < r.y + r.h + 2 && y + h + 2 > r.y)) continue;
@@ -117,7 +117,7 @@ export function nextFloor(run) {
   const occupied = (x, y) => (x === start.x && y === start.y) || (x === exit.x && y === exit.y && !run.boss) ||
     run.enemies.some(e => e.x === x && e.y === y) || run.chests.some(c => c.x === x && c.y === y);
   if (run.boss) run.enemies.push(makeEnemy('guardian', exit.x, exit.y, run.floor));
-  const count = run.boss ? 3 : 2 + Math.floor(run.floor * 0.6);
+  const count = run.boss ? 2 : 1 + Math.floor(run.floor * 0.35);
   for (let i = 0; i < count; i++) {
     const room = run.rooms[rand(1, run.rooms.length - 1)];
     const p = freeCell(run, room, (x, y) => occupied(x, y) || cheb(x, y, start.x, start.y) <= 4);
