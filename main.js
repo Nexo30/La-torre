@@ -1,5 +1,5 @@
 // Entry point: class select, board rendering, touch input and HUD.
-import { createRun, tapTile, heroAttack, usePotion, waitTurn, canHit } from './game.js';
+import { createRun, tapTile, heroAttack, heroMutationSkill, usePotion, waitTurn, canHit } from './game.js';
 import { CLASSES, GENDERS, COLS, ROWS, MAX_FLOOR, WALL, STAIRS } from './data.js';
 import { heroCanvas, enemyCanvas, tileCanvas } from './sprites.js';
 
@@ -49,6 +49,8 @@ function drawBoard(t) {
     const vis = run.visible[y][x];
     if (!vis) { ctx.fillStyle = 'rgba(8, 6, 16, 0.55)'; ctx.fillRect(px, py, T, T); continue; }
 
+    const npc = run.npcs.find(n => n.x === x && n.y === y);
+    if (npc) ctx.drawImage(tileCanvas('injector'), px, py, T, T);
     const e = run.enemies.find(en => en.x === x && en.y === y);
     if (e) drawEnemy(e, px, py + Math.sin(t / 350 + x) * T * 0.04, T);
   }
@@ -70,6 +72,8 @@ function drawBoard(t) {
   // hero
   const hx = ox + hero.x * T, hy = oy + hero.y * T + Math.sin(t / 260) * T * 0.04;
   ctx.drawImage(heroCanvas(run.classId, run.gender), hx, hy, T, T);
+  if (run.mutation === 'goblin') { ctx.fillStyle='rgba(76,210,75,.62)'; ctx.fillRect(hx+T*.28,hy+T*.18,T*.44,T*.48); }
+  if (run.mutation === 'beast') { ctx.fillStyle='rgba(165,169,174,.62)'; ctx.fillRect(hx+T*.28,hy+T*.18,T*.44,T*.48); }
   if (hero.flash > 0) { ctx.fillStyle = 'rgba(255, 60, 60, 0.35)'; ctx.fillRect(hx, hy, T, T); }
   ctx.strokeStyle = `rgba(127, 224, 255, ${0.5 + 0.4 * Math.sin(t / 200)})`;
   ctx.lineWidth = 2;
@@ -129,8 +133,12 @@ function refresh() {
   $('mp-fill').style.width = `${Math.max(0, h.mp / h.maxMp) * 100}%`;
   $('hp-text').textContent = `${Math.max(0, h.hp)}/${h.maxHp}`;
   $('mp-text').textContent = `${h.mp}/${h.maxMp}`;
-  $('stat-label').textContent = `ATK ${h.atk} · DEF ${h.def}`;
+  $('stat-label').textContent = `ATK ${h.atk} · DEF ${h.def}` + (run.mutation ? ` · ${{goblin:'Goblin',dragon:'Dragón',beast:'Bestia'}[run.mutation]}` : '');
   $('btn-potion').innerHTML = `Poción<small>x${h.potions}</small>`;
+  const powerNames={goblin:'Sigilo',dragon:'Fuego (3 MP)',beast:'Aullido (3 MP)'};
+  $('btn-mutation').textContent=run.mutation?powerNames[run.mutation]:'Poder';
+  $('actions').classList.toggle('grid-cols-4',!!run.mutation); $('actions').classList.toggle('grid-cols-3',!run.mutation);
+  $('btn-mutation').classList.toggle('hidden',!run.mutation); $('btn-mutation').disabled=!run.mutation||(run.mutation!=='goblin'&&h.mp<3);
   $('btn-potion').disabled = h.potions <= 0;
   const log = $('log');
   log.innerHTML = '';
@@ -145,9 +153,13 @@ function act(fn) {
   if (!run || run.over || run.won) return;
   fn();
   refresh();
+  if (run.dialog) showDialog();
   if (run.won) showEnd(true);
   else if (run.over) showEnd(false);
 }
+
+function showDialog(){if(!run.dialog)return;$('dialog-title').textContent=run.dialog.title;$('dialog-text').textContent=run.dialog.text;$('dialog-screen').classList.remove('hidden');}
+function closeDialog(){run.dialog=null;$('dialog-screen').classList.add('hidden');refresh();if(run.won)showEnd(true);else if(run.over)showEnd(false);}
 
 function showEnd(won) {
   $('end-title').textContent = won ? '¡Conquistaste la torre!' : 'Caíste';
@@ -196,8 +208,7 @@ function showStart() {
 function startRun() {
   run = createRun(sel.classId, sel.gender);
   floats = [];
-  $('start-screen').classList.add('hidden');
-  $('end-screen').classList.add('hidden');
+  $('start-screen').classList.add('hidden'); $('end-screen').classList.add('hidden'); $('dialog-screen').classList.add('hidden');
   resize();
   refresh();
 }
@@ -205,7 +216,7 @@ function startRun() {
 // ---------- wiring ----------
 
 canvas.addEventListener('pointerdown', e => {
-  if (!run || run.over || run.won) return;
+  if (!run || run.over || run.won || (run.dialog && !$('dialog-screen').classList.contains('hidden'))) return;
   const r = canvas.getBoundingClientRect();
   const tx = Math.floor((e.clientX - r.left - view.ox) / view.T);
   const ty = Math.floor((e.clientY - r.top - view.oy) / view.T);
@@ -213,6 +224,8 @@ canvas.addEventListener('pointerdown', e => {
 });
 
 $('btn-attack').addEventListener('click', () => act(() => heroAttack(run)));
+$('btn-mutation').addEventListener('click', () => act(() => heroMutationSkill(run)));
+$('dialog-close').addEventListener('click', closeDialog);
 $('btn-potion').addEventListener('click', () => act(() => usePotion(run)));
 $('btn-wait').addEventListener('click', () => act(() => waitTurn(run)));
 $('start-btn').addEventListener('click', startRun);
