@@ -109,7 +109,7 @@ export function nextFloor(run) {
   for (let i = 1; i < run.rooms.length - 1; i++) {
     if (Math.random() < 0.45) {
       const p = freeCell(run, run.rooms[i], () => false);
-      if (p) run.chests.push({ x: p.x, y: p.y, open: false });
+      if (p && !run.npcs.some(n => n.x === p.x && n.y === p.y)) run.chests.push({ x: p.x, y: p.y, open: false });
     }
   }
 
