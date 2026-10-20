@@ -1,5 +1,5 @@
 // Entry point: class select, board rendering, touch input and HUD.
-import { createRun, tapTile, heroAttack, heroSkill, usePotion, waitTurn, canHit } from './game.js';
+import { createRun, tapTile, heroAttack, usePotion, waitTurn, canHit } from './game.js';
 import { CLASSES, GENDERS, COLS, ROWS, MAX_FLOOR, WALL, STAIRS } from './data.js';
 import { heroCanvas, enemyCanvas, tileCanvas } from './sprites.js';
 
@@ -122,7 +122,7 @@ function frame(t) {
 // ---------- HUD ----------
 
 function refresh() {
-  const h = run.hero, c = CLASSES[run.classId], skill = c.skill;
+  const h = run.hero, c = CLASSES[run.classId];
   $('floor-label').textContent = `Piso ${run.floor}/${MAX_FLOOR}`;
   $('class-label').textContent = `${c.name} · ${GENDERS[run.gender].label}`;
   $('hp-fill').style.width = `${Math.max(0, h.hp / h.maxHp) * 100}%`;
@@ -130,8 +130,6 @@ function refresh() {
   $('hp-text').textContent = `${Math.max(0, h.hp)}/${h.maxHp}`;
   $('mp-text').textContent = `${h.mp}/${h.maxMp}`;
   $('stat-label').textContent = `ATK ${h.atk} · DEF ${h.def}`;
-  $('btn-skill').innerHTML = `Habilidad<small>${skill.name} · ${skill.cost} MP</small>`;
-  $('btn-skill').disabled = h.mp < skill.cost;
   $('btn-potion').innerHTML = `Poción<small>x${h.potions}</small>`;
   $('btn-potion').disabled = h.potions <= 0;
   const log = $('log');
@@ -156,6 +154,7 @@ function showEnd(won) {
   $('end-text').textContent = won
     ? `Llegaste a la cima de los 10 pisos como ${CLASSES[run.classId].name}.`
     : `Tu aventura terminó en el piso ${run.floor} de 10.`;
+  $('retry-btn').textContent = won ? 'Jugar otra vez' : 'Reintentar';
   $('end-screen').classList.remove('hidden');
 }
 
@@ -214,12 +213,11 @@ canvas.addEventListener('pointerdown', e => {
 });
 
 $('btn-attack').addEventListener('click', () => act(() => heroAttack(run)));
-$('btn-skill').addEventListener('click', () => act(() => heroSkill(run)));
 $('btn-potion').addEventListener('click', () => act(() => usePotion(run)));
 $('btn-wait').addEventListener('click', () => act(() => waitTurn(run)));
-$('menu-btn').addEventListener('click', showStart);
 $('start-btn').addEventListener('click', startRun);
-$('again-btn').addEventListener('click', showStart);
+$('retry-btn').addEventListener('click', startRun);
+$('menu-end-btn').addEventListener('click', showStart);
 $('g-hombre').addEventListener('click', () => { sel.gender = 'hombre'; renderClassList(); });
 $('g-mujer').addEventListener('click', () => { sel.gender = 'mujer'; renderClassList(); });
 // The board shrinks/grows when the log text wraps, so recompute the grid layout on every size change.
