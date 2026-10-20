@@ -1,7 +1,7 @@
 // Entry point: class select, board rendering, touch input and HUD.
-import { createRun, tapTile, heroAttack, heroMutationSkill, usePotion, waitTurn, canHit } from './game.js?v=20261020b';
-import { CLASSES, GENDERS, COLS, ROWS, MAX_FLOOR, WALL, STAIRS } from './data.js?v=20261020b';
-import { heroCanvas, enemyCanvas, tileCanvas } from './sprites.js?v=20261020b';
+import { createRun, tapTile, heroAttack, heroMutationSkill, usePotion, waitTurn, canHit } from './game.js?v=20261020c';
+import { CLASSES, GENDERS, COLS, ROWS, MAX_FLOOR, WALL, STAIRS } from './data.js?v=20261020c';
+import { heroCanvas, enemyCanvas, tileCanvas } from './sprites.js?v=20261020c';
 
 const $ = id => document.getElementById(id);
 const canvas = $('board');
@@ -192,7 +192,7 @@ function refresh() {
   $('mp-text').textContent = `${h.mp}/${h.maxMp}`;
   $('stat-label').textContent = `ATK ${h.atk} · DEF ${h.def}`;
   $('btn-potion').innerHTML = `Poción<small>x${h.potions}</small>`;
-  const powerNames={goblin:'Poder de sangre',dragon:'Poder de sangre',beast:'Poder de sangre'};
+  const powerNames={goblin:'Sigilo',dragon:'Aliento de fuego',beast:'Aullido bestial'};
   $('btn-mutation').textContent=run.mutation?powerNames[run.mutation]:'Poder';
   $('actions').classList.toggle('grid-cols-4',!!run.mutation); $('actions').classList.toggle('grid-cols-3',!run.mutation);
   $('btn-mutation').classList.toggle('hidden',!run.mutation); $('btn-mutation').disabled=!run.mutation||(run.mutation!=='goblin'&&h.mp<3);
