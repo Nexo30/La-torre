@@ -20,7 +20,7 @@ export function createRun(classId, gender) {
     classId, gender, floor: 0, turn: 0, over: false, won: false, boss: false,
     hero: { x: 0, y: 0, hp: maxHp, maxHp, mp: maxMp, maxMp, atk: c.atk, def: c.def, potions: 2, flash: 0 },
     grid: [], explored: [], visible: [], torches: new Set(), rooms: [],
-    enemies: [], chests: [], log: [], fx: [],
+    enemies: [], chests: [], npcs: [], mutation: null, dialog: null, log: [], fx: [],
   };
   addLog(run, 'Subes a la torre. Cada acción cuesta un turno.');
   nextFloor(run);
@@ -106,6 +106,12 @@ export function nextFloor(run) {
   if (!run.boss) run.grid[exit.y][exit.x] = STAIRS;
 
   run.chests = [];
+  run.npcs = [];
+  if (!run.mutation && run.rooms.length > 2) {
+    const npcRoom = run.rooms[rand(1, run.rooms.length - 2)];
+    const npcPos = freeCell(run, npcRoom, (x, y) => (x === start.x && y === start.y) || (x === exit.x && y === exit.y));
+    if (npcPos) run.npcs.push({ ...npcPos, used: false });
+  }
   for (let i = 1; i < run.rooms.length - 1; i++) {
     if (Math.random() < 0.45) {
       const p = freeCell(run, run.rooms[i], () => false);
@@ -115,7 +121,7 @@ export function nextFloor(run) {
 
   run.enemies = [];
   const occupied = (x, y) => (x === start.x && y === start.y) || (x === exit.x && y === exit.y && !run.boss) ||
-    run.enemies.some(e => e.x === x && e.y === y) || run.chests.some(c => c.x === x && c.y === y);
+    run.enemies.some(e => e.x === x && e.y === y) || run.chests.some(c => c.x === x && c.y === y) || run.npcs.some(n => n.x === x && n.y === y);
   if (run.boss) run.enemies.push(makeEnemy('guardian', exit.x, exit.y, run.floor));
   const count = run.boss ? 2 : 1 + Math.floor(run.floor * 0.35);
   for (let i = 0; i < count; i++) {
@@ -237,9 +243,54 @@ function moveHero(run, dx, dy) {
   h.x = nx; h.y = ny;
   const chest = chestAt(run, nx, ny);
   if (chest && !chest.open) openChest(run, chest);
+  const npc = run.npcs.find(n => n.x === nx && n.y === ny && !n.used);
+  if (npc) { meetInjector(run, npc); return true; }
   if (run.grid[ny][nx] === STAIRS) return descend(run);
   endTurn(run);
   return true;
+}
+
+
+function meetInjector(run, npc) {
+  npc.used = true;
+  const h = run.hero, kind = ['goblin', 'dragon', 'beast'][rand(0, 2)];
+  run.mutation = kind;
+  if (kind === 'goblin') {
+    h.atk = Math.max(1, h.atk - 2); h.stealthTurns = 0;
+    run.dialog = { title: 'Sangre de goblin', text: 'El desconocido te sujeta el brazo y clava una aguja llena de líquido verde. Las venas se te oscurecen y tu piel se vuelve verde. «No hagas ruido… ahora puedes desaparecer entre las sombras, pero tus golpes serán más débiles».' };
+    addLog(run, 'La sangre de goblin te vuelve verde: -2 ATK y obtienes Sigilo.');
+  } else if (kind === 'dragon') {
+    h.atk = Math.max(1, h.atk - 2); h.def = Math.max(0, h.def - 1);
+    run.dialog = { title: 'Sangre de dragón', text: 'El líquido rojo y dorado entra en tus venas y arde como brasas. El desconocido sonríe al ver humo salir de tu boca. «Tus golpes y tu defensa serán menores, pero podrás escupir fuego».' };
+    addLog(run, 'La sangre de dragón: -2 ATK, -1 DEF y obtienes Aliento de fuego.');
+  } else {
+    h.def += 4;
+    run.dialog = { title: 'Sangre de bestia', text: 'La inyección contiene una sustancia gris y espesa. Tus músculos se endurecen y la piel se vuelve gris ceniza. Un rugido retumba en tu pecho. «Ahora aguantarás mucho más y tu aullido alcanzará a todos los cercanos».' };
+    addLog(run, 'La sangre de bestia te vuelve gris: +4 DEF y obtienes Aullido.');
+  }
+  endTurn(run);
+}
+
+export function heroMutationSkill(run) {
+  if (!ready(run) || !run.mutation) return false;
+  const h = run.hero;
+  if (run.mutation === 'goblin') {
+    h.stealthTurns = 3; addLog(run, 'Te fundes con las sombras durante 3 turnos.'); endTurn(run); return true;
+  }
+  if (h.mp < 3) { addLog(run, 'Necesitas 3 MP para usar el poder de la sangre.'); return false; }
+  h.mp -= 3;
+  if (run.mutation === 'dragon') {
+    const targets = run.enemies.filter(e => run.visible[e.y][e.x] && cheb(e.x,e.y,h.x,h.y) <= 4 && lineClear(run,h.x,h.y,e.x,e.y));
+    if (!targets.length) { h.mp += 3; addLog(run, 'No hay enemigos visibles en rango para lanzar fuego.'); return false; }
+    targets.sort((a,b)=>cheb(a.x,a.y,h.x,h.y)-cheb(b.x,b.y,h.x,h.y));
+    const primary=targets[0], splash=targets.filter(e=>e!==primary && cheb(e.x,e.y,primary.x,primary.y)<=1);
+    hitEnemy(run,primary,2.2,false); splash.forEach(e=>hitEnemy(run,e,1.2,false)); addLog(run,'Lanzas fuego y abrasas el área.');
+  } else {
+    const targets=run.enemies.filter(e=>run.visible[e.y][e.x] && cheb(e.x,e.y,h.x,h.y)<=2);
+    if (!targets.length) { h.mp += 3; addLog(run,'No hay enemigos lo bastante cerca para oír tu aullido.'); return false; }
+    targets.forEach(e=>hitEnemy(run,e,1.5,false)); addLog(run,'Tu aullido sacude a todos los enemigos cercanos.');
+  }
+  endTurn(run); return true;
 }
 
 export function heroAttack(run) {
@@ -392,11 +443,14 @@ function endTurn(run) {
   const h = run.hero;
   h.mp = Math.min(h.maxMp, h.mp + 1);
   updateVision(run);
+  if (h.stealthTurns > 0) h.stealthTurns--;
   for (const e of [...run.enemies]) {
     if (h.hp <= 0) break;
     if (!run.enemies.includes(e)) continue;
+    if (h.stealthTurns > 0 && cheb(e.x,e.y,h.x,h.y)>1) continue;
     if (!e.aware) {
-      if (run.visible[e.y][e.x]) e.aware = true;
+      const detectRange = run.mutation === 'goblin' ? 2 : VISION;
+      if (cheb(e.x,e.y,h.x,h.y)<=detectRange && run.visible[e.y][e.x]) e.aware = true;
       else { wander(run, e); continue; }
     }
     for (let s = 0; s < e.speed; s++) {
