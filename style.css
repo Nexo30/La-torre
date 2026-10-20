@@ -156,3 +156,6 @@ html, body {
 .hidden { display:none !important; }
 .dialog-card{width:calc(100% - 40px);max-width:380px;padding:18px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg,#241b39,#100d1d);border:2px solid #7d6b9f;border-radius:8px;box-shadow:0 0 24px rgba(0,0,0,.65);color:#e8dcff;line-height:1.5}
 .dialog-person{color:#8ce2c3;font-size:11px;letter-spacing:2px}.dialog-card h2{color:#ffd34d;font-size:19px;font-weight:bold}.dialog-card p{font-size:13px}#btn-mutation{font-size:11px;padding-left:2px;padding-right:2px}
+
+#btn-mutation:not(.hidden) { border-color: #bca4ff; box-shadow: 0 0 9px rgba(151,119,255,.24); }
+#dialog-screen { z-index: 30; }
