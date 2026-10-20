@@ -20,7 +20,7 @@ export function createRun(classId, gender) {
     classId, gender, floor: 0, turn: 0, over: false, won: false, boss: false,
     hero: { x: 0, y: 0, hp: maxHp, maxHp, mp: maxMp, maxMp, atk: c.atk, def: c.def, potions: 2, flash: 0 },
     grid: [], explored: [], visible: [], torches: new Set(), rooms: [],
-    enemies: [], chests: [], npcs: [], mutation: null, dialog: null, log: [], fx: [],
+    enemies: [], chests: [], npcs: [], mutation: null, dialog: null, visualEffects: [], log: [], fx: [],
   };
   addLog(run, 'Subes a la torre. Cada acción cuesta un turno.');
   nextFloor(run);
@@ -257,17 +257,15 @@ function meetInjector(run, npc) {
   run.mutation = kind;
   if (kind === 'goblin') {
     h.atk = Math.max(1, h.atk - 2); h.stealthTurns = 0;
-    run.dialog = { title: 'Sangre de goblin', text: 'El desconocido te sujeta el brazo y clava una aguja llena de líquido verde. Las venas se te oscurecen y tu piel se vuelve verde. «No hagas ruido… ahora puedes desaparecer entre las sombras, pero tus golpes serán más débiles».' };
-    addLog(run, 'La sangre de goblin te vuelve verde: -2 ATK y obtienes Sigilo.');
+    addLog(run, 'Algo cambia bajo tu piel. Tu cuerpo adquiere un tono verde y sientes que puedes fundirte con las sombras. ATK -2.');
   } else if (kind === 'dragon') {
     h.atk = Math.max(1, h.atk - 2); h.def = Math.max(0, h.def - 1);
-    run.dialog = { title: 'Sangre de dragón', text: 'El líquido rojo y dorado entra en tus venas y arde como brasas. El desconocido sonríe al ver humo salir de tu boca. «Tus golpes y tu defensa serán menores, pero podrás escupir fuego».' };
-    addLog(run, 'La sangre de dragón: -2 ATK, -1 DEF y obtienes Aliento de fuego.');
+    addLog(run, 'Un calor abrasador te recorre y tu aliento humea. ATK -2, DEF -1.');
   } else {
     h.def += 4;
-    run.dialog = { title: 'Sangre de bestia', text: 'La inyección contiene una sustancia gris y espesa. Tus músculos se endurecen y la piel se vuelve gris ceniza. Un rugido retumba en tu pecho. «Ahora aguantarás mucho más y tu aullido alcanzará a todos los cercanos».' };
-    addLog(run, 'La sangre de bestia te vuelve gris: +4 DEF y obtienes Aullido.');
+    addLog(run, 'Tu piel se vuelve gris y tus músculos se endurecen. DEF +4.');
   }
+  run.dialog = { title: 'Una sustancia desconocida', text: 'El desconocido te agarra del brazo y te inyecta un líquido extraño. «Ya está. No preguntes qué era; lo descubrirás pronto». Se aleja sin darte ninguna explicación. Un calor extraño comienza a extenderse por tu cuerpo…' };
   endTurn(run);
 }
 
@@ -275,7 +273,9 @@ export function heroMutationSkill(run) {
   if (!ready(run) || !run.mutation) return false;
   const h = run.hero;
   if (run.mutation === 'goblin') {
-    h.stealthTurns = 3; addLog(run, 'Te fundes con las sombras durante 3 turnos.'); endTurn(run); return true;
+    h.stealthTurns = 4;
+    run.visualEffects.push({ type: 'stealth', x: h.x, y: h.y, started: Date.now(), duration: 1100 });
+    addLog(run, 'Te fundes con las sombras durante 4 turnos.'); endTurn(run); return true;
   }
   if (h.mp < 3) { addLog(run, 'Necesitas 3 MP para usar el poder de la sangre.'); return false; }
   h.mp -= 3;
@@ -284,10 +284,12 @@ export function heroMutationSkill(run) {
     if (!targets.length) { h.mp += 3; addLog(run, 'No hay enemigos visibles en rango para lanzar fuego.'); return false; }
     targets.sort((a,b)=>cheb(a.x,a.y,h.x,h.y)-cheb(b.x,b.y,h.x,h.y));
     const primary=targets[0], splash=targets.filter(e=>e!==primary && cheb(e.x,e.y,primary.x,primary.y)<=1);
+    run.visualEffects.push({ type: 'fire', x: h.x, y: h.y, targetX: primary.x, targetY: primary.y, started: Date.now(), duration: 900 });
     hitEnemy(run,primary,2.2,false); splash.forEach(e=>hitEnemy(run,e,1.2,false)); addLog(run,'Lanzas fuego y abrasas el área.');
   } else {
     const targets=run.enemies.filter(e=>run.visible[e.y][e.x] && cheb(e.x,e.y,h.x,h.y)<=2);
     if (!targets.length) { h.mp += 3; addLog(run,'No hay enemigos lo bastante cerca para oír tu aullido.'); return false; }
+    run.visualEffects.push({ type: 'howl', x: h.x, y: h.y, started: Date.now(), duration: 850 });
     targets.forEach(e=>hitEnemy(run,e,1.5,false)); addLog(run,'Tu aullido sacude a todos los enemigos cercanos.');
   }
   endTurn(run); return true;
