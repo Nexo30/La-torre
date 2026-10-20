@@ -39,6 +39,7 @@
 
     <nav id="actions" class="grid grid-cols-3 gap-2 p-2">
       <button id="btn-attack" class="act-btn">Atacar</button>
+      <button id="btn-mutation" class="act-btn hidden">Poder</button>
       <button id="btn-potion" class="act-btn">Poción</button>
       <button id="btn-wait" class="act-btn">Esperar</button>
     </nav>
@@ -63,6 +64,8 @@
         <p class="text-[11px] text-center text-[#8c80b8]">Toca una casilla para moverte o atacar. Cada paso y cada acción gasta un turno.</p>
       </div>
     </section>
+
+    <section id="dialog-screen" class="overlay hidden"><div class="dialog-card"><div class="dialog-person">EL INYECTOR</div><h2 id="dialog-title">Una sustancia extraña</h2><p id="dialog-text"></p><button id="dialog-close" class="start-btn">Aceptar la transformación</button></div></section>
 
     <!-- End of run -->
     <section id="end-screen" class="overlay hidden">
