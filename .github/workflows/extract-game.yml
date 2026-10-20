@@ -1,6 +1,7 @@
 name: Extract game ZIP into repository
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - ".github/workflows/extract-game.yml"
