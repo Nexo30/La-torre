@@ -130,3 +130,25 @@ html, body {
   border: 2px solid #ffd34d;
   border-radius: 6px;
 }
+
+
+/* End-of-run choices stay centered; the in-run HUD has no menu button. */
+.end-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+.menu-end-btn {
+  padding: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  font-family: inherit;
+  color: #d8ecff;
+  background: linear-gradient(180deg, #2a2050, #1a1436);
+  border: 2px solid #5a4a95;
+  border-radius: 6px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.menu-end-btn:active { transform: translateY(1px); }
