@@ -22,7 +22,7 @@ function resize() {
   canvas.height = Math.round(r.height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.imageSmoothingEnabled = false;
-  view.T = Math.max(16, Math.floor(Math.min(r.width / COLS, r.height / ROWS)));
+  view.T = Math.max(10, Math.floor(Math.min(r.width / COLS, r.height / ROWS)));
   view.ox = Math.floor((r.width - view.T * COLS) / 2);
   view.oy = Math.floor((r.height - view.T * ROWS) / 2);
 }
