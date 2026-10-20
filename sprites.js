@@ -16,29 +16,30 @@ function make(key, draw) {
   return c;
 }
 
-function drawHero(R, classId, gender) {
+function drawHero(R, classId, gender, mutation = null) {
   const look = CLASSES[classId].look;
+  const skin = mutation === 'goblin' ? '#55c94d' : mutation === 'beast' ? '#9ca4ad' : '#f2c9a0';
   const female = gender === 'mujer';
   const hair = female ? look.hairF : look.hairM;
   if (female) { R(3, 2, 2, 8, hair); R(11, 2, 2, 8, hair); }
   // head
-  R(5, 3, 6, 4, SKIN);
+  R(5, 3, 6, 4, skin);
   R(4, 1, 8, 2, hair);
   R(5, 3, 6, 1, hair);
   if (female) { R(4, 3, 1, 5, hair); R(11, 3, 1, 5, hair); }
   else { R(4, 3, 1, 2, hair); R(11, 3, 1, 2, hair); }
   R(6, 5, 1, 2, EYE); R(9, 5, 1, 2, EYE);
-  R(7, 7, 2, 1, SKIN);
+  R(7, 7, 2, 1, skin);
   // torso and arms
   R(5, 8, 6, 4, look.armor);
   R(4, 8, 8, 1, look.dark);
   R(5, 11, 6, 1, BELT);
   R(3, 9, 2, 3, look.armor); R(11, 9, 2, 3, look.armor);
-  R(3, 12, 2, 1, SKIN); R(11, 12, 2, 1, SKIN);
+  R(3, 12, 2, 1, skin); R(11, 12, 2, 1, skin);
   // legs
   if (female) {
     R(4, 12, 8, 2, look.armor);
-    R(5, 14, 2, 1, SKIN); R(9, 14, 2, 1, SKIN);
+    R(5, 14, 2, 1, skin); R(9, 14, 2, 1, skin);
   } else {
     R(5, 12, 2, 3, look.dark); R(9, 12, 2, 3, look.dark);
   }
@@ -67,8 +68,8 @@ function drawHero(R, classId, gender) {
   }
 }
 
-export function heroCanvas(classId, gender) {
-  return make(`h:${classId}:${gender}`, R => drawHero(R, classId, gender));
+export function heroCanvas(classId, gender, mutation = null) {
+  return make(`h:${classId}:${gender}:${mutation || 'normal'}`, R => drawHero(R, classId, gender, mutation));
 }
 
 const ENEMY_DRAW = {
