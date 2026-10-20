@@ -18,7 +18,7 @@ export function createRun(classId, gender) {
   const maxMp = c.mp + g.mpBonus;
   const run = {
     classId, gender, floor: 0, turn: 0, over: false, won: false, boss: false,
-    hero: { x: 0, y: 0, hp: maxHp, maxHp, mp: maxMp, maxMp, atk: c.atk, def: c.def, potions: 2, flash: 0 },
+    hero: { x: 0, y: 0, hp: maxHp, maxHp, mp: maxMp, maxMp, atk: c.atk, def: c.def, potions: 2, flash: 0, stealthTurns: 0, stealthCooldown: 0 },
     grid: [], explored: [], visible: [], torches: new Set(), rooms: [],
     enemies: [], chests: [], npcs: [], mutation: null, dialog: null, visualEffects: [], log: [], fx: [],
   };
@@ -278,9 +278,11 @@ export function heroMutationSkill(run) {
   if (!ready(run) || !run.mutation) return false;
   const h = run.hero;
   if (run.mutation === 'goblin') {
-    h.stealthTurns = 4;
-    run.visualEffects.push({ type: 'stealth', x: h.x, y: h.y, started: Date.now(), duration: 1100 });
-    addLog(run, 'Te fundes con las sombras durante 4 turnos.'); endTurn(run); return true;
+    if (h.stealthCooldown > 0) { addLog(run, `Sigilo en recarga: ${h.stealthCooldown} turnos.`); return false; }
+    h.stealthTurns = 5;
+    h.stealthCooldown = 7;
+    run.visualEffects.push({ type: 'stealth', x: h.x, y: h.y, started: Date.now(), duration: 1250 });
+    addLog(run, 'Te fundes con las sombras. El sigilo dura 4 turnos y entra en recarga.'); endTurn(run); return true;
   }
   if (h.mp < 3) { addLog(run, 'Necesitas 3 MP para usar el poder de la sangre.'); return false; }
   h.mp -= 3;
@@ -451,6 +453,7 @@ function endTurn(run) {
   h.mp = Math.min(h.maxMp, h.mp + 1);
   updateVision(run);
   if (h.stealthTurns > 0) h.stealthTurns--;
+  if (h.stealthCooldown > 0) h.stealthCooldown--;
   for (const e of [...run.enemies]) {
     if (h.hp <= 0) break;
     if (!run.enemies.includes(e)) continue;
